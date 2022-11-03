@@ -7,14 +7,41 @@ use std::io::Read;
 // const DNS_SERVER: (&str, u16) = (DNS_IP, PORT);
 
 fn main() {
-    let mut query_res = Vec::new();
+    let mut query_buff = Vec::new();
     let file = File::open("query_packet.bin").expect("not found");
     for i in file.bytes() {
         match i {
-            Ok(val) => query_res.push(val),
+            Ok(val) => query_buff.push(val),
             _ => println!("Error"),
         }
     }
+    let mut header = Vec::new();
+    let mut lbl_sequence = Vec::new();
+    let mut class_name = Vec::new();
+    let mut type_name = Vec::new();
+    let length = query_buff.len();
+    let mut count = 0;
+    for i in query_buff.clone().into_iter() {
+        if count < 13 {
+            header.push(i);
+            count += 1;
+        } else if length - count <= 2 {
+            type_name.push(i);
+            count += 1;
+        } else if length - count <= 4 {
+            class_name.push(i);
+            count += 1;
+        } else {
+            lbl_sequence.push(i);
+            count += 1;
+        }
+    }
+
+    println!("This is complete query: {:?}", query_buff);
+    println!("This is header: {:?}", header);
+    println!("This is Label: {:?}", lbl_sequence);
+    println!("This is Type: {:?}", type_name);
+    println!("This is Class: {:?}", class_name);
 
     // let s = std::str::from_utf8(&query_res[1..31]).unwrap();
     // // println!("{}", s);
@@ -22,8 +49,6 @@ fn main() {
     //     Ok(val) => println!("{}", val),
     //     Err(e) => println!("{e}"),
     // }
-
-    println!("{:?}", query_res);
 }
 
 // struct Query {
