@@ -252,9 +252,6 @@ impl TryFrom<&Vec<u8>> for RecordBytes {
 
     fn try_from(value: &Vec<u8>) -> Result<Self, Self::Error> {
         let length = value[12];
-        let question_len = Question::try_from(value)?;
-        // println!("question: {:?}", question_len.0.len());
-
         let mut domain = Vec::new();
         let count = 13 as usize;
         let mut record = Vec::new();
@@ -267,11 +264,12 @@ impl TryFrom<&Vec<u8>> for RecordBytes {
                 record.push(value[count + i]);
                 i += 1;
             }
+
             // for x in count + domain.len()..count + domain.len() + 5 {
             //     record.push(value[x]);
             // }
 
-            for x in &value[domain.len() + question_len.0.len()..] {
+            for x in &value[count + domain.len()..] {
                 record.push(x.clone())
             }
             Ok(RecordBytes(record))
@@ -309,6 +307,7 @@ impl RecordBytes {
         let second: u8 = self.0[domain.len() + 6];
         let third: u8 = self.0[domain.len() + 7];
         let fourth: u8 = self.0[domain.len() + 8];
+        println!("hello {:?} {:?} {:?} {:?}", first, second, third, fourth);
         let ttl: u32 = ((first as u32) << 24)
             | ((second as u32) << 16)
             | ((third as u32) << 8)
@@ -319,7 +318,6 @@ impl RecordBytes {
         let domain = self.get_domain();
         let first: u8 = self.0[domain.len() + 9];
         let second: u8 = self.0[domain.len() + 10];
-        println!("len: {:?}", second);
         let len: u16 = (first as u16) << 8 | second as u16;
         len
     }
@@ -346,38 +344,43 @@ fn main() -> color_eyre::Result<()> {
 
     let header_bytes = HeaderBytes::try_from(&bytes_vec)?;
     let question_bytes = Question::try_from(&bytes_vec)?;
+    println!("question bytes {:?}", question_bytes);
     let record_bytes = RecordBytes::try_from(&bytes_vec)?;
-    println!("{:?}", record_bytes);
+    println!("record bytes {:?}", record_bytes);
 
     println!("domain: {:?}", question_bytes.get_domain());
-    println!("class : {:?}", question_bytes.get_class());
     println!("question type: {:?}", question_bytes.get_type());
+    println!("class : {:?}", question_bytes.get_class());
 
-    println!("Id: {:?}", header_bytes.get_id());
-    println!("Is Query: {:?}", header_bytes.get_query_response());
-    println!("opcode: {:?}", header_bytes.get_opcode());
-    println!("authoritative ans: {:?}", header_bytes.get_auth_ans());
-    println!("trucated message: {:?}", header_bytes.get_tc_msg());
-    println!(
-        "recursion desired: {:?}",
-        header_bytes.get_recursion_desired()
-    );
-    println!(
-        "recursion available: {:?}",
-        header_bytes.get_recursion_available()
-    );
-    println!("get reserved: {:?}", header_bytes.get_reserved());
-    println!("response code: {:?}", header_bytes.get_response_code());
-    println!("question count: {:?}", header_bytes.get_question_count());
-    println!("answer count: {:?}", header_bytes.get_answer_count());
-    println!("authority count: {:?}", header_bytes.get_authority_count());
-    println!(
-        "additional count: {:?}",
-        header_bytes.get_additional_count()
-    );
+    // println!("Id: {:?}", header_bytes.get_id());
+    // println!("Is Query: {:?}", header_bytes.get_query_response());
+    // println!("opcode: {:?}", header_bytes.get_opcode());
+    // println!("authoritative ans: {:?}", header_bytes.get_auth_ans());
+    // println!("trucated message: {:?}", header_bytes.get_tc_msg());
+    // println!(
+    //     "recursion desired: {:?}",
+    //     header_bytes.get_recursion_desired()
+    // );
+    // println!(
+    //     "recursion available: {:?}",
+    //     header_bytes.get_recursion_available()
+    // );
+    // println!("get reserved: {:?}", header_bytes.get_reserved());
+    // println!("response code: {:?}", header_bytes.get_response_code());
+    // println!("question count: {:?}", header_bytes.get_question_count());
+    // println!("answer count: {:?}", header_bytes.get_answer_count());
+    // println!("authority count: {:?}", header_bytes.get_authority_count());
+    // println!(
+    //     "additional count: {:?}",
+    //     header_bytes.get_additional_count()
+    // );
 
-    println!("rdata: {:?}", record_bytes.get_rdata());
+    println!("domain: {:?}", record_bytes.get_domain());
+    println!("type: {:?}", record_bytes.get_type());
+    println!("class: {:?}", record_bytes.get_class());
     println!("ttl: {:?}", record_bytes.get_ttl());
+    println!("len: {:?}", record_bytes.get_len());
+    println!("rdata: {:?}", record_bytes.get_rdata());
 
     // let mut query_buff = Vec::new();
     // for i in file.bytes() {
