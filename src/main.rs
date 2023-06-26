@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::Read;
+use std::net::Ipv4Addr;
 
 // const DNS_IP: &str = "8.8.8.8"; // Public DNS Server
 // const PORT: u16 = 53;
@@ -42,6 +43,7 @@ impl ByteContainer {
 enum DnsErrors {
     InsufficientBytesForHeader,
     InsufficientBytesForQuestion,
+    InsufficientBytesForRecord,
     ByteContainerError,
 }
 
@@ -51,13 +53,13 @@ fn sequence<T, E: std::fmt::Debug + std::fmt::Display>(
     let mut res = Vec::new();
 
     for r in list {
-        res.push(r?);
-        // match r {
-        //     Err(e) => return Err(e),
-        //     Ok(val) => {
-        //         res.push(val);
-        //     }
-        // }
+        // res.push(r?);
+        match r {
+            Err(e) => return Err(e),
+            Ok(val) => {
+                res.push(val);
+            }
+        }
     }
 
     Ok(res)
@@ -242,6 +244,97 @@ impl Question {
     }
 }
 
+#[derive(Debug)]
+struct RecordBytes(Vec<u8>);
+
+impl TryFrom<&Vec<u8>> for RecordBytes {
+    type Error = DnsErrors;
+
+    fn try_from(value: &Vec<u8>) -> Result<Self, Self::Error> {
+        let length = value[12];
+        let question_len = Question::try_from(value)?;
+        // println!("question: {:?}", question_len.0.len());
+
+        let mut domain = Vec::new();
+        let count = 13 as usize;
+        let mut record = Vec::new();
+        if length == 0 {
+            Err(DnsErrors::InsufficientBytesForRecord)
+        } else {
+            let mut i = 0;
+            while value[count + i] != 0 {
+                domain.push(value[count + i]);
+                record.push(value[count + i]);
+                i += 1;
+            }
+            // for x in count + domain.len()..count + domain.len() + 5 {
+            //     record.push(value[x]);
+            // }
+
+            for x in &value[domain.len() + question_len.0.len()..] {
+                record.push(x.clone())
+            }
+            Ok(RecordBytes(record))
+        }
+    }
+}
+
+impl RecordBytes {
+    fn get_domain(&self) -> Vec<u8> {
+        let mut domain = Vec::new();
+        let mut n = 0;
+        while self.0[n] != 0 {
+            domain.push(self.0[n]);
+            n += 1;
+        }
+        domain
+    }
+    fn get_type(&self) -> u16 {
+        let domain = self.get_domain();
+        let first: u8 = self.0[domain.len() + 1];
+        let second: u8 = self.0[domain.len() + 2];
+        let q_type: u16 = (first as u16) << 8 | second as u16;
+        q_type
+    }
+    fn get_class(&self) -> u16 {
+        let domain = self.get_domain();
+        let first: u8 = self.0[domain.len() + 3];
+        let second: u8 = self.0[domain.len() + 4];
+        let class: u16 = (first as u16) << 8 | second as u16;
+        class
+    }
+    fn get_ttl(&self) -> u32 {
+        let domain = self.get_domain();
+        let first: u8 = self.0[domain.len() + 5];
+        let second: u8 = self.0[domain.len() + 6];
+        let third: u8 = self.0[domain.len() + 7];
+        let fourth: u8 = self.0[domain.len() + 8];
+        let ttl: u32 = ((first as u32) << 24)
+            | ((second as u32) << 16)
+            | ((third as u32) << 8)
+            | fourth as u32;
+        ttl
+    }
+    fn get_len(&self) -> u16 {
+        let domain = self.get_domain();
+        let first: u8 = self.0[domain.len() + 9];
+        let second: u8 = self.0[domain.len() + 10];
+        println!("len: {:?}", second);
+        let len: u16 = (first as u16) << 8 | second as u16;
+        len
+    }
+    fn get_rdata(&self) -> Ipv4Addr {
+        let domain = self.get_domain();
+        let first: u8 = self.0[domain.len() + 11];
+        let second: u8 = self.0[domain.len() + 12];
+        let third: u8 = self.0[domain.len() + 13];
+        let fourth: u8 = self.0[domain.len() + 14];
+
+        let rdata = Ipv4Addr::new(first, second, third, fourth);
+        rdata
+    }
+}
+
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
@@ -249,15 +342,17 @@ fn main() -> color_eyre::Result<()> {
     let bytes = file.bytes().collect::<Vec<_>>();
     let bytes_vec = sequence(bytes)?;
 
+    println!("total bytes: {:?}", bytes_vec);
+
     let header_bytes = HeaderBytes::try_from(&bytes_vec)?;
-
     let question_bytes = Question::try_from(&bytes_vec)?;
-    println!("domain: {:?}", question_bytes.get_domain());
+    let record_bytes = RecordBytes::try_from(&bytes_vec)?;
+    println!("{:?}", record_bytes);
 
+    println!("domain: {:?}", question_bytes.get_domain());
     println!("class : {:?}", question_bytes.get_class());
     println!("question type: {:?}", question_bytes.get_type());
-    println!("question type: {:?}", question_bytes.get_type());
-    println!("total bytes: {:?}", bytes_vec);
+
     println!("Id: {:?}", header_bytes.get_id());
     println!("Is Query: {:?}", header_bytes.get_query_response());
     println!("opcode: {:?}", header_bytes.get_opcode());
@@ -280,6 +375,10 @@ fn main() -> color_eyre::Result<()> {
         "additional count: {:?}",
         header_bytes.get_additional_count()
     );
+
+    println!("rdata: {:?}", record_bytes.get_rdata());
+    println!("ttl: {:?}", record_bytes.get_ttl());
+
     // let mut query_buff = Vec::new();
     // for i in file.bytes() {
     //     match i {
