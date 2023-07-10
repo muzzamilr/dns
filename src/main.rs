@@ -14,30 +14,7 @@ use std::net::Ipv4Addr;
 // fn is_bit_set(num, u8, idx: u8) -> bool {
 //
 // }
-struct ByteContainer {
-    list: [u8; 512],
-    position: usize,
-}
-
-impl ByteContainer {
-    fn new() -> ByteContainer {
-        ByteContainer {
-            list: [0; 512],
-            position: 0,
-        }
-    }
-    fn position(&self) -> usize {
-        self.position
-    }
-    fn skip(&mut self, steps: usize) -> Result<(), DnsErrors> {
-        self.position += steps;
-        Ok(())
-    }
-    fn change_position(&mut self, position: usize) -> Result<(), DnsErrors> {
-        self.position = position;
-        Ok(())
-    }
-}
+//
 
 #[derive(Debug)]
 enum DnsErrors {
@@ -45,6 +22,52 @@ enum DnsErrors {
     InsufficientBytesForQuestion,
     InsufficientBytesForRecord,
     ByteContainerError,
+}
+
+#[derive(Debug)]
+struct ByteContainer {
+    list: [u8; 512],
+    pos: usize,
+}
+
+impl ByteContainer {
+    fn new() -> ByteContainer {
+        ByteContainer {
+            list: [0; 512],
+            pos: 0,
+        }
+    }
+    fn position(&self) -> usize {
+        self.pos
+    }
+    fn skip(&mut self, steps: usize) -> Result<(), DnsErrors> {
+        self.pos += steps;
+        Ok(())
+    }
+
+    fn change_position(&mut self, position: usize) -> Result<(), DnsErrors> {
+        self.pos = position;
+        Ok(())
+    }
+
+    fn read(&mut self) -> Result<u8, DnsErrors> {
+        if self.pos >= 512 {
+            return Err(DnsErrors::ByteContainerError);
+        }
+        let val = self.list[self.pos];
+        self.pos += 1;
+        Ok(val)
+    }
+
+    fn read_u16(&mut self) -> Result<u16, DnsErrors> {
+        let val = ((self.read()? as u16) << 8) | (self.read()? as u16);
+        Ok(val)
+    }
+
+    fn read_u32(&mut self) -> Result<u32, DnsErrors> {
+        let val = ((self.read_u16()? as u32) << 16) | (self.read_u16()? as u32);
+        Ok(val)
+    }
 }
 
 fn sequence<T, E: std::fmt::Debug + std::fmt::Display>(
@@ -336,11 +359,16 @@ impl RecordBytes {
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let file = File::open("response_packet.bin")?;
+    let mut file = File::open("response_packet.bin")?;
     let bytes = file.bytes().collect::<Vec<_>>();
     let bytes_vec = sequence(bytes)?;
+    // let mut data = ByteContainer::new();
 
-    println!("total bytes: {:?}", bytes_vec);
+    // file.read(&mut data.list)?;
+
+    // println!("{:?}", data);
+
+    // println!("total bytes: {:?}", bytes_vec);
 
     let header_bytes = HeaderBytes::try_from(&bytes_vec)?;
     let question_bytes = Question::try_from(&bytes_vec)?;
@@ -352,28 +380,28 @@ fn main() -> color_eyre::Result<()> {
     println!("question type: {:?}", question_bytes.get_type());
     println!("class : {:?}", question_bytes.get_class());
 
-    // println!("Id: {:?}", header_bytes.get_id());
-    // println!("Is Query: {:?}", header_bytes.get_query_response());
-    // println!("opcode: {:?}", header_bytes.get_opcode());
-    // println!("authoritative ans: {:?}", header_bytes.get_auth_ans());
-    // println!("trucated message: {:?}", header_bytes.get_tc_msg());
-    // println!(
-    //     "recursion desired: {:?}",
-    //     header_bytes.get_recursion_desired()
-    // );
-    // println!(
-    //     "recursion available: {:?}",
-    //     header_bytes.get_recursion_available()
-    // );
-    // println!("get reserved: {:?}", header_bytes.get_reserved());
-    // println!("response code: {:?}", header_bytes.get_response_code());
-    // println!("question count: {:?}", header_bytes.get_question_count());
-    // println!("answer count: {:?}", header_bytes.get_answer_count());
-    // println!("authority count: {:?}", header_bytes.get_authority_count());
-    // println!(
-    //     "additional count: {:?}",
-    //     header_bytes.get_additional_count()
-    // );
+    println!("Id: {:?}", header_bytes.get_id());
+    println!("Is Query: {:?}", header_bytes.get_query_response());
+    println!("opcode: {:?}", header_bytes.get_opcode());
+    println!("authoritative ans: {:?}", header_bytes.get_auth_ans());
+    println!("trucated message: {:?}", header_bytes.get_tc_msg());
+    println!(
+        "recursion desired: {:?}",
+        header_bytes.get_recursion_desired()
+    );
+    println!(
+        "recursion available: {:?}",
+        header_bytes.get_recursion_available()
+    );
+    println!("get reserved: {:?}", header_bytes.get_reserved());
+    println!("response code: {:?}", header_bytes.get_response_code());
+    println!("question count: {:?}", header_bytes.get_question_count());
+    println!("answer count: {:?}", header_bytes.get_answer_count());
+    println!("authority count: {:?}", header_bytes.get_authority_count());
+    println!(
+        "additional count: {:?}",
+        header_bytes.get_additional_count()
+    );
 
     println!("domain: {:?}", record_bytes.get_domain());
     println!("type: {:?}", record_bytes.get_type());
