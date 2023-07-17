@@ -31,6 +31,7 @@ impl Packet {
 
         for _ in 0..result.header.questions {
             let mut question = Question::new("".to_string(), QueryType::UnKnown(0));
+            println!("hello");
             question.read(buffer)?;
             result.questions.push(question);
         }
