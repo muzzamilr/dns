@@ -12,15 +12,17 @@ pub enum ResponseCode {
     NoError = 0,
 }
 
-impl ResponseCode {
-    pub fn get_code(val: u8) -> ResponseCode {
+impl TryFrom<u8> for ResponseCode {
+    type Error = DnsErrors;
+    fn try_from(val: u8) -> Result<Self, Self::Error> {
         match val {
-            1 => ResponseCode::ERROR,
-            2 => ResponseCode::ERROR2,
-            3 => ResponseCode::ERROR3,
-            4 => ResponseCode::ERROR4,
-            5 => ResponseCode::ERROR5,
-            _ => ResponseCode::NoError,
+            1 => Ok(ResponseCode::ERROR),
+            2 => Ok(ResponseCode::ERROR2),
+            3 => Ok(ResponseCode::ERROR3),
+            4 => Ok(ResponseCode::ERROR4),
+            5 => Ok(ResponseCode::ERROR5),
+            0 => Ok(ResponseCode::NoError),
+            _ => Err(DnsErrors::ResponseCodeError),
         }
     }
 }
@@ -56,7 +58,7 @@ impl Header {
         let response = (first_flags & (1 << 7)) > 0;
 
         let second_flags = buff.read()?;
-        let rescode = ResponseCode::get_code(second_flags & 0x0F);
+        let rescode = ResponseCode::try_from(second_flags & 0x0F)?;
         let checking_disabled = (second_flags & (1 << 4)) > 0;
         let authed_data = (second_flags & (1 << 5)) > 0;
         let z = (second_flags & (1 << 6)) > 0;

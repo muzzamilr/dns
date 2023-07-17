@@ -8,4 +8,5 @@ pub enum DnsErrors {
     ByteContainerError,
     IndexOutOfBound,
     QueryTypeMismatch,
+    ResponseCodeError,
 }
