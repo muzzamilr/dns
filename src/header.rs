@@ -1,3 +1,5 @@
+use crate::errors::DnsErrors;
+
 use super::byte_container::ByteContainer;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -43,46 +45,44 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn create() -> Header {
-        Header {
-            id: 0,
-            recursion_desired: false,
-            truncated_message: false,
-            authoritative_answer: false,
-            opcode: 0,
-            response: false,
-            rescode: ResponseCode::NoError,
-            checking_disabled: false,
-            authed_data: false,
-            z: false,
-            recursion_available: false,
-            questions: 0,
-            answers: 0,
-            authoritative_entries: 0,
-            resource_entries: 0,
-        }
-    }
+    pub fn read(buff: &mut ByteContainer) -> Result<Header, DnsErrors> {
+        let id = buff.read_u16()?;
 
-    pub fn read(&mut self, buff: &mut ByteContainer) {
-        self.id = buff.read_u16().unwrap_or(0);
+        let first_flags = buff.read()?;
+        let recursion_desired = (first_flags & (1 << 0)) > 0;
+        let truncated_message = (first_flags & (1 << 1)) > 0;
+        let authoritative_answer = (first_flags & (1 << 2)) > 0;
+        let opcode = (first_flags >> 3) & 0x0F;
+        let response = (first_flags & (1 << 7)) > 0;
 
-        let first_flags = buff.read().unwrap_or(0);
-        self.recursion_desired = (first_flags & (1 << 0)) > 0;
-        self.truncated_message = (first_flags & (1 << 1)) > 0;
-        self.authoritative_answer = (first_flags & (1 << 2)) > 0;
-        self.opcode = (first_flags >> 3) & 0x0F;
-        self.response = (first_flags & (1 << 7)) > 0;
+        let second_flags = buff.read()?;
+        let rescode = ResponseCode::get_code(second_flags & 0x0F);
+        let checking_disabled = (second_flags & (1 << 4)) > 0;
+        let authed_data = (second_flags & (1 << 5)) > 0;
+        let z = (second_flags & (1 << 6)) > 0;
+        let recursion_available = (second_flags & (1 << 7)) > 0;
 
-        let second_flags = buff.read().unwrap_or(0);
-        self.rescode = ResponseCode::get_code(second_flags & 0x0F);
-        self.checking_disabled = (second_flags & (1 << 4)) > 0;
-        self.authed_data = (second_flags & (1 << 5)) > 0;
-        self.z = (second_flags & (1 << 6)) > 0;
-        self.recursion_available = (second_flags & (1 << 7)) > 0;
+        let questions = buff.read_u16()?;
+        let answers = buff.read_u16()?;
+        let authoritative_entries = buff.read_u16()?;
+        let resource_entries = buff.read_u16()?;
 
-        self.questions = buff.read_u16().unwrap_or(0);
-        self.answers = buff.read_u16().unwrap_or(0);
-        self.authoritative_entries = buff.read_u16().unwrap_or(0);
-        self.resource_entries = buff.read_u16().unwrap_or(0);
+        Ok(Header {
+            id,
+            recursion_desired,
+            truncated_message,
+            authoritative_answer,
+            opcode,
+            response,
+            rescode,
+            checking_disabled,
+            authed_data,
+            z,
+            recursion_available,
+            questions,
+            answers,
+            authoritative_entries,
+            resource_entries,
+        })
     }
 }

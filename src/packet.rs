@@ -1,6 +1,6 @@
 use super::{
-    byte_container::ByteContainer, errors::DnsErrors, header::Header, query_type::QueryType,
-    question::Question, record::Record,
+    byte_container::ByteContainer, errors::DnsErrors, header::Header, question::Question,
+    record::Record,
 };
 
 #[allow(dead_code)]
@@ -15,9 +15,9 @@ pub struct Packet {
 
 #[allow(dead_code)]
 impl Packet {
-    pub fn new() -> Packet {
+    pub fn new(header: Header) -> Packet {
         Packet {
-            header: Header::create(),
+            header,
             questions: Vec::new(),
             record: Vec::new(),
             // authorities: Vec::new(),
@@ -26,8 +26,9 @@ impl Packet {
     }
 
     pub fn from_buffer(buffer: &mut ByteContainer) -> Result<Packet, DnsErrors> {
-        let mut result = Packet::new();
-        result.header.read(buffer);
+        let header = Header::read(buffer)?;
+
+        let mut result = Packet::new(header);
 
         for _ in 0..result.header.questions {
             let question = Question::read(buffer)?;
