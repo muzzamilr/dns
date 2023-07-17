@@ -30,7 +30,7 @@ fn main() -> color_eyre::Result<()> {
     let mut buffer = ByteContainer::new();
     f.read(&mut buffer.list)?;
 
-    let packet = Packet::from_buffer(&mut buffer).unwrap();
+    let packet = Packet::from_buffer(&mut buffer)?;
     println!("{:#?}", packet.header);
 
     for q in packet.questions {
