@@ -36,7 +36,7 @@ fn main() -> color_eyre::Result<()> {
     for q in packet.questions {
         println!("{:#?}", q);
     }
-    for rec in packet.answers {
+    for rec in packet.record {
         println!("{:#?}", rec);
     }
     // for rec in packet.authorities {

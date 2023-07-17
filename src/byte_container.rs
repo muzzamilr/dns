@@ -59,7 +59,11 @@ impl ByteContainer {
         Ok(&self.list[start..start + len as usize])
     }
 
-    pub fn read_qname(&mut self, outstr: &mut String) -> Result<(), DnsErrors> {
+    pub fn read_qname(
+        &mut self,
+        // outstr: &mut String
+    ) -> Result<String, DnsErrors> {
+        let mut outstr = "".to_string();
         let (mut pos, mut jumped, mut jumps_performed) = (self.position(), false, 0);
         let mut delim = "";
         // Initialize keep_looping and len
@@ -106,7 +110,7 @@ impl ByteContainer {
             self.change_position(pos)?;
         }
 
-        Ok(())
+        Ok(outstr)
     }
 
     pub fn write(&mut self, val: u8) -> Result<(), DnsErrors> {

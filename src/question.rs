@@ -7,15 +7,11 @@ pub struct Question {
 }
 
 impl Question {
-    pub fn new(name: String, qtype: QueryType) -> Question {
-        Question { name, qtype }
-    }
-
-    pub fn read(&mut self, buffer: &mut ByteContainer) -> Result<(), DnsErrors> {
-        buffer.read_qname(&mut self.name)?;
-        self.qtype = QueryType::from_num(buffer.read_u16()?); // qtype
+    pub fn read(buffer: &mut ByteContainer) -> Result<Question, DnsErrors> {
+        let qname = buffer.read_qname()?;
+        let qtype = QueryType::from_num(buffer.read_u16()?)?; // qtype
         let _ = buffer.read_u16()?; // class
 
-        Ok(())
+        Ok(Question { name: qname, qtype })
     }
 }

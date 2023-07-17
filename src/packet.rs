@@ -8,7 +8,7 @@ use super::{
 pub struct Packet {
     pub header: Header,
     pub questions: Vec<Question>,
-    pub answers: Vec<Record>,
+    pub record: Vec<Record>,
     // authorities: Vec<Record>,
     // resources: Vec<Record>,
 }
@@ -19,7 +19,7 @@ impl Packet {
         Packet {
             header: Header::create(),
             questions: Vec::new(),
-            answers: Vec::new(),
+            record: Vec::new(),
             // authorities: Vec::new(),
             // resources: Vec::new(),
         }
@@ -30,15 +30,13 @@ impl Packet {
         result.header.read(buffer);
 
         for _ in 0..result.header.questions {
-            let mut question = Question::new("".to_string(), QueryType::UnKnown(0));
-            println!("hello");
-            question.read(buffer)?;
+            let question = Question::read(buffer)?;
             result.questions.push(question);
         }
 
         for _ in 0..result.header.answers {
             let rec = Record::read(buffer)?;
-            result.answers.push(rec);
+            result.record.push(rec);
         }
         // for _ in 0..result.header.authoritative_entries {
         //     let rec = Record::read(buffer)?;

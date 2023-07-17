@@ -29,11 +29,10 @@ pub enum Record {
 
 impl Record {
     pub fn read(buffer: &mut ByteContainer) -> Result<Record, DnsErrors> {
-        let mut domain = String::new();
-        buffer.read_qname(&mut domain)?;
+        let domain = buffer.read_qname()?;
 
         let qtype_num = buffer.read_u16()?;
-        let qtype = QueryType::from_num(qtype_num);
+        let qtype = QueryType::from_num(qtype_num)?;
         let _ = buffer.read_u16()?;
         let ttl = buffer.read_u32()?;
         let data_len = buffer.read_u16()?;
@@ -71,22 +70,11 @@ impl Record {
             }
 
             QueryType::CNAME => {
-                let mut cname = String::new();
-                buffer.read_qname(&mut cname)?;
+                let cname = buffer.read_qname()?;
 
                 Ok(Record::CNAME {
                     domain,
                     host: cname,
-                    ttl,
-                })
-            }
-            QueryType::UnKnown(_) => {
-                buffer.skip(data_len as usize)?;
-
-                Ok(Record::UNKNOWN {
-                    domain,
-                    qtype: qtype_num,
-                    data_len,
                     ttl,
                 })
             }
