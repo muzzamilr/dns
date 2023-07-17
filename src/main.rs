@@ -1,4 +1,4 @@
-use dns::dns_client::{byte_container::ByteContainer, packet::Packet};
+use dns::{byte_container::ByteContainer, packet::Packet};
 use std::fs::File;
 use std::io::Read;
 
