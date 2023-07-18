@@ -4,7 +4,7 @@ use std::io::Read;
 
 // const DNS_IP: &str = "1.1.1.1";
 // const PORT: u16 = 53;
-// const RES_BUFF: usize = 1024;
+// const RES_BUFF: usize = 512;
 // const DNS_SERVER: (&str, u16) = (DNS_IP, PORT);
 
 // fn sequence<T, E: std::fmt::Debug + std::fmt::Display>(
@@ -39,12 +39,6 @@ fn main() -> color_eyre::Result<()> {
     for rec in packet.record {
         println!("{:#?}", rec);
     }
-    // for rec in packet.authorities {
-    //     println!("{:#?}", rec);
-    // }
-    // for rec in packet.resources {
-    //     println!("{:#?}", rec);
-    // }
 
     Ok(())
 }

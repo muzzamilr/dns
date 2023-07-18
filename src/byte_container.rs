@@ -64,18 +64,19 @@ impl ByteContainer {
         // outstr: &mut String
     ) -> Result<String, DnsErrors> {
         let mut outstr = "".to_string();
-        let (mut pos, mut jumped, mut jumps_performed) = (self.position(), false, 0);
-        let mut delim = "";
-        // Initialize keep_looping and len
-        let mut keep_looping = true;
-        let mut len = 255; // A non-zero value to start the while loop
+        let mut pos = self.position();
 
-        while keep_looping && len != 0 {
-            if jumps_performed > 5 {
+        let mut jumped = false;
+        let max_jumps = 5;
+        let mut jumps_performed = 0;
+
+        let mut delim = "";
+        loop {
+            if jumps_performed > max_jumps {
                 return Err(DnsErrors::ByteContainerError);
             }
 
-            len = self.get(pos)?;
+            let len = self.get(pos)?;
 
             if (len & 0xC0) == 0xC0 {
                 if !jumped {
@@ -83,27 +84,29 @@ impl ByteContainer {
                 }
 
                 let b2 = self.get(pos + 1)? as u16;
-                pos = (((len as u16) ^ 0xC0) << 8 | b2) as usize;
+                let offset = (((len as u16) ^ 0xC0) << 8) | b2;
+                pos = offset as usize;
 
                 jumped = true;
                 jumps_performed += 1;
+
                 continue;
+            } else {
+                pos += 1;
+
+                if len == 0 {
+                    break;
+                }
+
+                outstr.push_str(delim);
+
+                let str_buffer = self.get_range(pos, len as usize)?;
+                outstr.push_str(&String::from_utf8_lossy(str_buffer).to_lowercase());
+
+                delim = ".";
+
+                pos += len as usize;
             }
-
-            pos += 1;
-
-            // Modify the condition that controls the loop
-            if len == 0 {
-                keep_looping = false;
-            }
-
-            outstr.push_str(delim);
-
-            let str_buffer = self.get_range(pos, len as usize)?;
-            outstr.push_str(&String::from_utf8_lossy(str_buffer).to_lowercase());
-
-            delim = ".";
-            pos += len as usize;
         }
 
         if !jumped {
