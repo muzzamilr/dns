@@ -7,7 +7,7 @@ pub struct Question {
 }
 
 impl Question {
-    pub fn read(buffer: &mut ByteContainer) -> Result<Question, DnsErrors> {
+    pub fn from_buffer(buffer: &mut ByteContainer) -> Result<Question, DnsErrors> {
         let qname = buffer.read_qname()?;
         let qtype = QueryType::from_num(buffer.read_u16()?)?; // qtype
         let _ = buffer.read_u16()?; // class

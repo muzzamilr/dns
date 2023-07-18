@@ -28,7 +28,7 @@ pub enum Record {
 }
 
 impl Record {
-    pub fn read(buffer: &mut ByteContainer) -> Result<Record, DnsErrors> {
+    pub fn from_buffer(buffer: &mut ByteContainer) -> Result<Record, DnsErrors> {
         let domain = buffer.read_qname()?;
 
         let qtype_num = buffer.read_u16()?;

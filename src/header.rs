@@ -47,7 +47,7 @@ pub struct Header {
 }
 
 impl Header {
-    pub fn read(buff: &mut ByteContainer) -> Result<Self, DnsErrors> {
+    pub fn from_buffer(buff: &mut ByteContainer) -> Result<Self, DnsErrors> {
         let id = buff.read_u16()?;
 
         let first_flags = buff.read()?;

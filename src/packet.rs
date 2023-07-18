@@ -22,17 +22,17 @@ impl Packet {
     }
 
     pub fn from_buffer(buffer: &mut ByteContainer) -> Result<Packet, DnsErrors> {
-        let header = Header::read(buffer)?;
+        let header = Header::from_buffer(buffer)?;
 
         let mut result = Packet::new(header);
 
         for _ in 0..result.header.questions {
-            let question = Question::read(buffer)?;
+            let question = Question::from_buffer(buffer)?;
             result.questions.push(question);
         }
 
         for _ in 0..result.header.answers {
-            let rec = Record::read(buffer)?;
+            let rec = Record::from_buffer(buffer)?;
             result.record.push(rec);
         }
 
