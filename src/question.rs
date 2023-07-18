@@ -1,5 +1,5 @@
 use super::{byte_container::ByteContainer, errors::DnsErrors, query_type::QueryType};
-
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct Question {
     name: String,

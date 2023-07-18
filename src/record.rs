@@ -4,12 +4,6 @@ use super::{byte_container::ByteContainer, errors::DnsErrors, query_type::QueryT
 
 #[derive(Clone, Debug)]
 pub enum Record {
-    UNKNOWN {
-        domain: String,
-        qtype: u16,
-        data_len: u16,
-        ttl: u32,
-    },
     A {
         domain: String,
         addr: Ipv4Addr,
