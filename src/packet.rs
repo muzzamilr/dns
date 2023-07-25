@@ -13,9 +13,9 @@ pub struct Packet {
 
 #[allow(dead_code)]
 impl Packet {
-    pub fn new(header: Header) -> Packet {
+    pub fn new() -> Packet {
         Packet {
-            header,
+            header: Header::new(),
             questions: Vec::new(),
             record: Vec::new(),
         }
@@ -24,7 +24,8 @@ impl Packet {
     pub fn from_buffer(buffer: &mut ByteContainer) -> Result<Packet, DnsErrors> {
         let header = Header::from_buffer(buffer)?;
 
-        let mut result = Packet::new(header);
+        let mut result = Packet::new();
+        result.header = header;
 
         for _ in 0..result.header.questions {
             let question = Question::from_buffer(buffer)?;
@@ -37,5 +38,20 @@ impl Packet {
         }
 
         Ok(result)
+    }
+
+    pub fn to_buffer(&mut self, buffer: &mut ByteContainer) -> Result<(), DnsErrors> {
+        self.header.questions = self.questions.len() as u16;
+        self.header.answers = self.record.len() as u16;
+
+        self.header.write(buffer)?;
+
+        for question in &self.questions {
+            question.write(buffer)?;
+        }
+        for rec in &self.record {
+            rec.write(buffer)?;
+        }
+        Ok(())
     }
 }

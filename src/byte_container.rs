@@ -131,11 +131,11 @@ impl ByteContainer {
         Ok(())
     }
 
-    pub fn write_u16(&mut self, val: u16) -> Result<(), DnsErrors> {
+    pub fn write_u16(&mut self, val: u16) -> Result<u16, DnsErrors> {
         self.write((val >> 8) as u8)?;
         self.write((val & 0xFF) as u8)?;
 
-        Ok(())
+        Ok(val)
     }
 
     pub fn write_u32(&mut self, val: u32) -> Result<(), DnsErrors> {
@@ -161,6 +161,17 @@ impl ByteContainer {
         }
 
         self.write_u8(0)?;
+
+        Ok(())
+    }
+    pub fn set(&mut self, pos: usize, val: u8) -> Result<(), DnsErrors> {
+        self.list[pos] = val;
+
+        Ok(())
+    }
+    pub fn set_u16(&mut self, pos: usize, val: u16) -> Result<(), DnsErrors> {
+        self.set(pos, (val >> 8) as u8)?;
+        self.set(pos + 1, (val & 0xFF) as u8)?;
 
         Ok(())
     }
