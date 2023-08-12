@@ -1,8 +1,9 @@
 use dns::query_type::QueryType;
 use dns::{byte_container::ByteContainer, packet::Packet, question::Question};
-use std::fs::File;
-use std::io::Read;
-use std::net::UdpSocket;
+// use std::fs::File;
+// use std::io::Read;
+// use std::net::UdpSocket;
+use tokio::net::UdpSocket;
 
 // const DNS_IP: &str = "1.1.1.1";
 // const PORT: u16 = 53;
@@ -27,18 +28,19 @@ use std::net::UdpSocket;
 //     Ok(res)
 // }
 
-fn main() -> color_eyre::Result<()> {
+#[tokio::main]
+async fn main() -> color_eyre::Result<()> {
     // let mut f = File::open("response_packet.bin")?;
     // let mut buffer = ByteContainer::new();
     // f.read(&mut buffer.list)?;
 
-    let qname = "carbonteq.com";
+    let qname = "google.com";
     let qtype = QueryType::A;
     let server = ("1.1.1.1", 53);
 
-    let socket = UdpSocket::bind(("0.0.0.0", 43210))?;
+    let socket = UdpSocket::bind(("0.0.0.0", 8080)).await?;
 
-    let mut packet = Packet::new();
+    let mut packet = Packet::default();
 
     packet.header.id = 6666;
     packet.header.questions = 1;
@@ -47,18 +49,20 @@ fn main() -> color_eyre::Result<()> {
         .questions
         .push(Question::try_from(qname.to_string(), qtype)?);
 
-    let mut req_buffer = ByteContainer::new();
+    let mut req_buffer = ByteContainer::default();
     packet.to_buffer(&mut req_buffer)?;
-    socket.send_to(&req_buffer.list[0..req_buffer.pos], server)?;
+    socket
+        .send_to(&req_buffer.list[0..req_buffer.pos], server)
+        .await?;
 
-    let mut res_buffer = ByteContainer::new();
-    socket.recv_from(&mut res_buffer.list)?;
+    let mut res_buffer = ByteContainer::default();
+    socket.recv_from(&mut res_buffer.list).await?;
 
     let res_packet = Packet::from_buffer(&mut res_buffer)?;
-    println!("{:?}", res_packet.header);
+    // println!("{:?}", res_packet.header);
 
     for q in res_packet.questions {
-        println!("{:?}", q);
+        // println!("{:?}", q);
     }
     for rec in res_packet.record {
         println!("{:?}", rec);

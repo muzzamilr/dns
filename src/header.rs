@@ -46,6 +46,12 @@ pub struct Header {
     pub resource_entries: u16,
 }
 
+impl Default for Header {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Header {
     pub fn new() -> Header {
         Header {

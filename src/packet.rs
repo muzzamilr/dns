@@ -11,11 +11,17 @@ pub struct Packet {
     pub record: Vec<Record>,
 }
 
+impl Default for Packet {
+    fn default() -> Self {
+        Packet::new()
+    }
+}
+
 #[allow(dead_code)]
 impl Packet {
     pub fn new() -> Packet {
         Packet {
-            header: Header::new(),
+            header: Header::default(),
             questions: Vec::new(),
             record: Vec::new(),
         }

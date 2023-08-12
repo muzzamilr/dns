@@ -6,6 +6,12 @@ pub struct ByteContainer {
     pub pos: usize,
 }
 
+impl Default for ByteContainer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ByteContainer {
     pub fn new() -> ByteContainer {
         ByteContainer {
