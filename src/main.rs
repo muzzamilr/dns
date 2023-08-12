@@ -42,17 +42,18 @@ async fn main() -> color_eyre::Result<()> {
 
     let args = Arguments::parse();
 
-    let qname = args.query_name;
     let a = match args.query_type.to_uppercase().as_str() {
         "A" => Ok(QueryType::A),
         "AAAA" => Ok(QueryType::AAAA),
         "CNAME" => Ok(QueryType::CNAME),
         _ => Err("Invalid query type".to_string()),
     };
+
+    let qname = args.query_name;
     let qtype = a.unwrap();
     let server = ("1.1.1.1", 53);
 
-    let socket = UdpSocket::bind(("0.0.0.0", 8080)).await?;
+    let socket = UdpSocket::bind(("0.0.0.0", 8085)).await?;
 
     let mut packet = Packet::default();
 
@@ -75,7 +76,7 @@ async fn main() -> color_eyre::Result<()> {
     let res_packet = Packet::from_buffer(&mut res_buffer)?;
     // println!("{:?}", res_packet.header);
 
-    for q in res_packet.questions {
+    for _q in res_packet.questions {
         // println!("{:?}", q);
     }
     for rec in res_packet.record {
