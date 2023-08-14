@@ -4,4 +4,8 @@
 cargo run <Query Name> <Query Type>
 ```
 
-Available query types, \* AAAA \* A \* CNAME
+Available query types
+
+- AAAA
+- A
+- CNAME
